@@ -1,5 +1,7 @@
+import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:camera/camera.dart' hide availableCameras;
 import 'package:provider/provider.dart';
@@ -125,37 +127,60 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
         appState.isFlashOn ? FlashMode.always : FlashMode.off,
       );
 
-      // Take high-res photo
+      // Take photo
       final XFile file = await _cameraController!.takePicture();
-      final Uint8List cameraBytes = await file.readAsBytes();
 
-      // Burn dashboard overlay onto image and save
       // Play shutter sound if enabled
       if (appState.settings.shutterSoundEnabled) {
         final player = AudioPlayer();
         player.play(AssetSource('sounds/shutter.mp3')).catchError((_) {});
       }
 
-      final success = await ImageCompilationService.burnAndSave(
-        dashboardKey: _dashboardKey,
-        cameraImageBytes: cameraBytes,
-        settings: appState.settings,
-      );
+      // Read camera bytes
+      final Uint8List cameraBytes = await file.readAsBytes();
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(success ? '✅ Photo saved to gallery!' : '❌ Failed to save photo'),
-            backgroundColor: success ? Colors.green[700] : Colors.red[700],
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+      // Capture the overlay widget to PNG (must happen on main thread)
+      Uint8List? overlayBytes;
+      if (appState.settings.geoTagEnabled) {
+        final boundary = _dashboardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+        if (boundary != null && boundary.size.width > 0 && boundary.size.height > 0) {
+          final ui.Image overlayUiImage = await boundary.toImage(pixelRatio: 2.0);
+          final ByteData? byteData = await overlayUiImage.toByteData(format: ui.ImageByteFormat.png);
+          if (byteData != null) {
+            overlayBytes = byteData.buffer.asUint8List();
+          }
+        }
       }
+
+      // Release the spinner immediately — user can take another photo now
+      appState.setCapturing(false);
+
+      // Save settings snapshot for background work
+      final settingsSnapshot = appState.settings;
+
+      // Fire-and-forget: heavy compositing + gallery save runs in background
+      ImageCompilationService.burnAndSaveFromBytes(
+        cameraImageBytes: cameraBytes,
+        overlayBytes: overlayBytes,
+        settings: settingsSnapshot,
+      ).then((success) {
+        if (settingsSnapshot.hapticFeedbackEnabled && success) {
+          HapticFeedback.vibrate();
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(success ? '✅ Photo saved to gallery!' : '❌ Failed to save photo'),
+              backgroundColor: success ? Colors.green[700] : Colors.red[700],
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        }
+      });
     } catch (e) {
       debugPrint('Capture error: $e');
-    } finally {
       appState.setCapturing(false);
     }
   }
