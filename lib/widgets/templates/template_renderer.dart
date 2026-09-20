@@ -5,6 +5,7 @@ import '../../models/sensor_data.dart';
 import '../../models/settings_data.dart';
 
 import 'advance_template.dart';
+import 'advance2_template.dart';
 import 'datetime_template.dart';
 import 'scan_location_template.dart';
 import 'classic_template.dart';
@@ -32,6 +33,14 @@ class TemplateRenderer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     switch (templateId) {
+      case 'advance2':
+        return Advance2Template(
+          loc: loc,
+          weather: weather,
+          sensor: sensor,
+          settings: settings,
+          userNote: userNote,
+        );
       case 'datetime':
         return DateTimeTemplate(loc: loc);
       case 'scan_location':

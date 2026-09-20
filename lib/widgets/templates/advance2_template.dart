@@ -6,16 +6,15 @@ import '../../models/sensor_data.dart';
 import '../../models/settings_data.dart';
 import '../../utils/constants.dart';
 import '../mini_map_widget.dart';
-import '../sensor_chip.dart';
 
-class AdvanceTemplate extends StatelessWidget {
+class Advance2Template extends StatelessWidget {
   final LocationData loc;
   final WeatherData weather;
   final SensorData sensor;
   final SettingsData settings;
   final String userNote;
 
-  const AdvanceTemplate({
+  const Advance2Template({
     super.key,
     required this.loc,
     required this.weather,
@@ -113,28 +112,10 @@ class AdvanceTemplate extends StatelessWidget {
                   ),
               ],
             ),
-            if (settings.showWeatherData || settings.showSensorData) ...[
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  if (settings.showWeatherData && weather.temperatureCelsius != 0)
-                    SensorChip(icon: Icons.thermostat, value: '${weather.temperatureCelsius.toStringAsFixed(1)}°C', color: Colors.orange),
-                  if (settings.showWeatherData && weather.windSpeedKmh != 0)
-                    SensorChip(icon: Icons.air, value: '${weather.windSpeedKmh.toStringAsFixed(1)} km/h', color: Colors.cyan),
-                  if (settings.showWeatherData && weather.humidityPercent != 0)
-                    SensorChip(icon: Icons.water_drop, value: '${weather.humidityPercent}%', color: Colors.lightBlue),
-                  if (settings.showSensorData && loc.altitude != 0)
-                    SensorChip(icon: Icons.landscape, value: '${loc.altitude.toStringAsFixed(1)} m', color: Colors.green),
-                  if (settings.showSensorData && sensor.magneticFieldMicroTesla != 0)
-                    SensorChip(icon: Icons.explore, value: '${sensor.magneticFieldMicroTesla.toStringAsFixed(1)} µT', color: Colors.purple),
-                ],
-              ),
-            ],
           ],
         ),
       ),
     );
   }
 }
+

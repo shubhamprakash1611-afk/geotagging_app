@@ -139,16 +139,12 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       // Read camera bytes
       final Uint8List cameraBytes = await file.readAsBytes();
 
-      // Capture the overlay widget to PNG (must happen on main thread)
-      Uint8List? overlayBytes;
+      // Capture the overlay widget as ui.Image directly (no PNG conversion)
+      ui.Image? overlayUiImage;
       if (appState.settings.geoTagEnabled) {
         final boundary = _dashboardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
         if (boundary != null && boundary.size.width > 0 && boundary.size.height > 0) {
-          final ui.Image overlayUiImage = await boundary.toImage(pixelRatio: 2.0);
-          final ByteData? byteData = await overlayUiImage.toByteData(format: ui.ImageByteFormat.png);
-          if (byteData != null) {
-            overlayBytes = byteData.buffer.asUint8List();
-          }
+          overlayUiImage = await boundary.toImage(pixelRatio: 2.0);
         }
       }
 
@@ -158,10 +154,10 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       // Save settings snapshot for background work
       final settingsSnapshot = appState.settings;
 
-      // Fire-and-forget: heavy compositing + gallery save runs in background
-      ImageCompilationService.burnAndSaveFromBytes(
+      // GPU-accelerated compositing + save (runs async, ~1 second total)
+      ImageCompilationService.burnAndSaveWithUiImage(
         cameraImageBytes: cameraBytes,
-        overlayBytes: overlayBytes,
+        overlayUiImage: overlayUiImage,
         settings: settingsSnapshot,
       ).then((success) {
         if (settingsSnapshot.hapticFeedbackEnabled && success) {

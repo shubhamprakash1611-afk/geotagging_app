@@ -18,6 +18,12 @@ class GeoTagTemplate {
       description: 'Full map, address, and coordinates with sensor data.',
     ),
     GeoTagTemplate(
+      id: 'advance2',
+      name: 'Advance 2 Template',
+      description: 'Full map and address, without sensor badges at the bottom.',
+      isNew: true,
+    ),
+    GeoTagTemplate(
       id: 'datetime',
       name: 'DateTime Template',
       description: 'Large time display with colored date panel.',

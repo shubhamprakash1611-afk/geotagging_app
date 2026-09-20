@@ -3,6 +3,7 @@ import 'package:camera/camera.dart';
 
 enum GeoTagPlacement { top, bottom }
 enum ImageResolution { high, medium, low }
+enum MapType { street, earth }
 
 class SettingsData {
   final GeoTagPlacement geoTagPlacement;
@@ -10,6 +11,7 @@ class SettingsData {
   final ImageResolution imageResolution;
   final bool shutterSoundEnabled;
   final double mapZoomLevel;
+  final MapType mapType;
   final String saveDirectory;
   final String activeTemplateId;
   final bool showWeatherData;
@@ -24,6 +26,7 @@ class SettingsData {
     required this.imageResolution,
     required this.shutterSoundEnabled,
     required this.mapZoomLevel,
+    required this.mapType,
     required this.saveDirectory,
     required this.activeTemplateId,
     required this.showWeatherData,
@@ -39,6 +42,7 @@ class SettingsData {
     imageResolution: ImageResolution.high,
     shutterSoundEnabled: true,
     mapZoomLevel: 14.0,
+    mapType: MapType.street,
     saveDirectory: 'GeoTagCamera',
     activeTemplateId: 'advance', // Setting 'advance' as default since it matches reference mostly
     showWeatherData: true,
@@ -65,6 +69,7 @@ class SettingsData {
     ImageResolution? imageResolution,
     bool? shutterSoundEnabled,
     double? mapZoomLevel,
+    MapType? mapType,
     String? saveDirectory,
     String? activeTemplateId,
     bool? showWeatherData,
@@ -79,6 +84,7 @@ class SettingsData {
       imageResolution: imageResolution ?? this.imageResolution,
       shutterSoundEnabled: shutterSoundEnabled ?? this.shutterSoundEnabled,
       mapZoomLevel: mapZoomLevel ?? this.mapZoomLevel,
+      mapType: mapType ?? this.mapType,
       saveDirectory: saveDirectory ?? this.saveDirectory,
       activeTemplateId: activeTemplateId ?? this.activeTemplateId,
       showWeatherData: showWeatherData ?? this.showWeatherData,
@@ -96,6 +102,7 @@ class SettingsData {
       'imageResolution': imageResolution.name,
       'shutterSoundEnabled': shutterSoundEnabled,
       'mapZoomLevel': mapZoomLevel,
+      'mapType': mapType.name,
       'saveDirectory': saveDirectory,
       'activeTemplateId': activeTemplateId,
       'showWeatherData': showWeatherData,
@@ -113,6 +120,7 @@ class SettingsData {
       imageResolution: ImageResolution.values.byName(json['imageResolution'] ?? ImageResolution.high.name),
       shutterSoundEnabled: json['shutterSoundEnabled'] ?? true,
       mapZoomLevel: (json['mapZoomLevel'] ?? 14.0).toDouble(),
+      mapType: MapType.values.byName(json['mapType'] ?? MapType.street.name),
       saveDirectory: json['saveDirectory'] ?? 'GeoTagCamera',
       activeTemplateId: json['activeTemplateId'] ?? 'advance',
       showWeatherData: json['showWeatherData'] ?? true,

@@ -14,13 +14,18 @@ class DashboardOverlay extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        return TemplateRenderer(
-          templateId: state.settings.activeTemplateId,
-          loc: state.location,
-          weather: state.weather,
-          sensor: state.sensor,
-          settings: state.settings,
-          userNote: state.userNote,
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.noScaling,
+          ),
+          child: TemplateRenderer(
+            templateId: state.settings.activeTemplateId,
+            loc: state.location,
+            weather: state.weather,
+            sensor: state.sensor,
+            settings: state.settings,
+            userNote: state.userNote,
+          ),
         );
       },
     );

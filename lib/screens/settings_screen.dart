@@ -57,21 +57,24 @@ class SettingsScreen extends StatelessWidget {
                     if (settings.geoTagEnabled) ...[
                       ListTile(
                         title: const Text('Placement', style: TextStyle(color: Colors.white)),
-                        trailing: SegmentedButton<GeoTagPlacement>(
-                          segments: const [
-                            ButtonSegment(value: GeoTagPlacement.top, label: Text('Top')),
-                            ButtonSegment(value: GeoTagPlacement.bottom, label: Text('Bottom')),
-                          ],
-                          selected: {settings.geoTagPlacement},
-                          onSelectionChanged: (Set<GeoTagPlacement> newSelection) {
-                            state.updateSettings(settings.copyWith(geoTagPlacement: newSelection.first));
-                          },
-                          style: ButtonStyle(
-                            backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                              (Set<WidgetState> states) {
-                                if (states.contains(WidgetState.selected)) return AppColors.accentGreen;
-                                return Colors.transparent;
-                              },
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: SegmentedButton<GeoTagPlacement>(
+                            segments: const [
+                              ButtonSegment(value: GeoTagPlacement.top, label: Text('Top')),
+                              ButtonSegment(value: GeoTagPlacement.bottom, label: Text('Bottom')),
+                            ],
+                            selected: {settings.geoTagPlacement},
+                            onSelectionChanged: (Set<GeoTagPlacement> newSelection) {
+                              state.updateSettings(settings.copyWith(geoTagPlacement: newSelection.first));
+                            },
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                                (Set<WidgetState> states) {
+                                  if (states.contains(WidgetState.selected)) return AppColors.accentGreen;
+                                  return Colors.transparent;
+                                },
+                              ),
                             ),
                           ),
                         ),
@@ -92,22 +95,25 @@ class SettingsScreen extends StatelessWidget {
                     _buildSectionHeader('Camera'),
                     ListTile(
                       title: const Text('Image Resolution', style: TextStyle(color: Colors.white)),
-                      trailing: SegmentedButton<ImageResolution>(
-                        segments: const [
-                          ButtonSegment(value: ImageResolution.low, label: Text('Low')),
-                          ButtonSegment(value: ImageResolution.medium, label: Text('Med')),
-                          ButtonSegment(value: ImageResolution.high, label: Text('High')),
-                        ],
-                        selected: {settings.imageResolution},
-                        onSelectionChanged: (Set<ImageResolution> newSelection) {
-                          state.updateSettings(settings.copyWith(imageResolution: newSelection.first));
-                        },
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                            (Set<WidgetState> states) {
-                              if (states.contains(WidgetState.selected)) return AppColors.accentGreen;
-                              return Colors.transparent;
-                            },
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: SegmentedButton<ImageResolution>(
+                          segments: const [
+                            ButtonSegment(value: ImageResolution.low, label: Text('Low')),
+                            ButtonSegment(value: ImageResolution.medium, label: Text('Med')),
+                            ButtonSegment(value: ImageResolution.high, label: Text('High')),
+                          ],
+                          selected: {settings.imageResolution},
+                          onSelectionChanged: (Set<ImageResolution> newSelection) {
+                            state.updateSettings(settings.copyWith(imageResolution: newSelection.first));
+                          },
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                              (Set<WidgetState> states) {
+                                if (states.contains(WidgetState.selected)) return AppColors.accentGreen;
+                                return Colors.transparent;
+                              },
+                            ),
                           ),
                         ),
                       ),
@@ -130,6 +136,30 @@ class SettingsScreen extends StatelessWidget {
                     ),
 
                     _buildSectionHeader('Map & Data'),
+                    ListTile(
+                      title: const Text('Map Type', style: TextStyle(color: Colors.white)),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: SegmentedButton<MapType>(
+                          segments: const [
+                            ButtonSegment(value: MapType.street, label: Text('Street')),
+                            ButtonSegment(value: MapType.earth, label: Text('Earth')),
+                          ],
+                          selected: {settings.mapType},
+                          onSelectionChanged: (Set<MapType> newSelection) {
+                            state.updateSettings(settings.copyWith(mapType: newSelection.first));
+                          },
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                              (Set<WidgetState> states) {
+                                if (states.contains(WidgetState.selected)) return AppColors.accentGreen;
+                                return Colors.transparent;
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                     ListTile(
                       title: const Text('Map Zoom Level', style: TextStyle(color: Colors.white)),
                       subtitle: Slider(
