@@ -8,7 +8,8 @@ class SecurityService {
     final config = TalsecConfig(
       androidConfig: AndroidConfig(
         packageName: 'com.geotagging.app',
-        signingCertHashes: ['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='],
+        // SHA-256 of android/app/upload-keystore.jks, encoded as Base64.
+        signingCertHashes: ['NyADpaQL4x/5TwVXBHk3lIYu34e7zVgMXRTQ7COP/FE='],
       ),
       iosConfig: IOSConfig(
         bundleIds: ['com.geotagging.app'],

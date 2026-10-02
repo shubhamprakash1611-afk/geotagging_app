@@ -71,7 +71,8 @@ class _ShutterButtonState extends State<ShutterButton>
                         width: 58,
                         height: 58,
                         child: CircularProgressIndicator(
-                          color: Color(0xFFB5B3E6), // Light purplish color from frames
+                          color: Color(
+                              0xFFB5B3E6), // Light purplish color from frames
                           strokeWidth: 4,
                         ),
                       )

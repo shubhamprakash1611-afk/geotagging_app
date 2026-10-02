@@ -42,15 +42,15 @@ class TemplateRenderer extends StatelessWidget {
           userNote: userNote,
         );
       case 'datetime':
-        return DateTimeTemplate(loc: loc);
+        return DateTimeTemplate(loc: loc, settings: settings);
       case 'scan_location':
         return ScanLocationTemplate(loc: loc, settings: settings);
       case 'classic':
-        return ClassicTemplate(loc: loc);
+        return ClassicTemplate(loc: loc, settings: settings);
       case 'reporting':
-        return ReportingTemplate(loc: loc);
+        return ReportingTemplate(loc: loc, settings: settings);
       case 'navigation':
-        return NavigationTemplate(loc: loc, sensor: sensor);
+        return NavigationTemplate(loc: loc, sensor: sensor, settings: settings);
       case 'advance':
       default:
         return AdvanceTemplate(
@@ -63,4 +63,3 @@ class TemplateRenderer extends StatelessWidget {
     }
   }
 }
-

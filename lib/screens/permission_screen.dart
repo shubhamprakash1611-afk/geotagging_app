@@ -37,11 +37,15 @@ class PermissionScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.camera_enhance, size: 80, color: Color(0xFF00E676)),
+              const Icon(Icons.camera_enhance,
+                  size: 80, color: Color(0xFF00E676)),
               const SizedBox(height: 24),
               const Text(
                 'GPS Map Camera',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
               ),
               const SizedBox(height: 12),
               const Text(
@@ -55,10 +59,14 @@ class PermissionScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF00E676),
                   foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30)),
                 ),
-                child: const Text('Grant Permissions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: const Text('Grant Permissions',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ],
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state_provider.dart';
 import '../utils/constants.dart';
+import '../utils/app_translations.dart';
 
 class ZoomModeSelector extends StatelessWidget {
   final Function(double) onZoomChanged;
@@ -11,6 +12,7 @@ class ZoomModeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AppStateProvider>(
       builder: (context, state, _) {
+        final t = AppTranslations(state.settings.language);
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -26,13 +28,15 @@ class ZoomModeSelector extends StatelessWidget {
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    margin: const EdgeInsets.symmetric(horizontal: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
                     decoration: BoxDecoration(
                       color: isActive ? AppColors.accentGreen : Colors.black45,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isActive ? AppColors.accentGreen : Colors.white24,
+                        color:
+                            isActive ? AppColors.accentGreen : Colors.white24,
                         width: 1,
                       ),
                     ),
@@ -52,26 +56,39 @@ class ZoomModeSelector extends StatelessWidget {
 
             // --- Mode Row ---
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: ['QUICK SHARE', 'PHOTO', 'VIDEO'].map((mode) {
                 final isActive = state.currentMode == mode;
-                return GestureDetector(
-                  onTap: () => state.setMode(mode),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isActive ? AppColors.accentGreen : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      mode,
-                      style: TextStyle(
-                        color: isActive ? Colors.black : Colors.white70,
-                        fontWeight: isActive ? FontWeight.bold : FontWeight.w400,
-                        fontSize: 12,
-                        letterSpacing: 0.5,
+                final label = mode == 'PHOTO'
+                    ? t.text('photo')
+                    : mode == 'VIDEO'
+                        ? t.text('video')
+                        : t.text('quickShare');
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => state.setMode(mode),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 5, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? AppColors.accentGreen
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: isActive ? Colors.black : Colors.white70,
+                          fontWeight:
+                              isActive ? FontWeight.bold : FontWeight.w500,
+                          fontSize: 11,
+                          letterSpacing: 0.3,
+                        ),
                       ),
                     ),
                   ),

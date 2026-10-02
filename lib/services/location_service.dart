@@ -4,11 +4,11 @@ import '../models/location_data.dart';
 import '../utils/plus_code_generator.dart';
 
 class LocationService {
-
   /// Fetches current GPS position and reverse geocodes it into a full address.
   /// Uses on-device geocoder (Apple Maps on iOS, Google Play Services on Android).
   /// Cost: $0 — all on-device.
-  static Future<LocationData> getCurrentLocation({int timeLimitSeconds = 15}) async {
+  static Future<LocationData> getCurrentLocation(
+      {int timeLimitSeconds = 15, String? localeIdentifier}) async {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
@@ -40,16 +40,26 @@ class LocationService {
         throw Exception('Could not determine location');
       }
 
-      // Reverse geocode (on-device, free)
+      // geocoding 2.2.x exposes localeIdentifier on
+      // placemarkFromCoordinates, but does not forward it to the platform
+      // implementation. Set the platform locale explicitly before the lookup.
+      // Without this call Android always returns the device-default language.
+      if (localeIdentifier != null && localeIdentifier.isNotEmpty) {
+        await GeocodingPlatform.instance!.setLocaleIdentifier(localeIdentifier);
+      }
+
+      // Reverse geocode using the requested template language.
       final placemarks = await placemarkFromCoordinates(
-        position.latitude, position.longitude,
+        position.latitude,
+        position.longitude,
       );
 
       final place = placemarks.isNotEmpty ? placemarks.first : null;
 
       // Generate Plus Code locally (no API needed)
       final plusCode = PlusCodeGenerator.encode(
-        position.latitude, position.longitude,
+        position.latitude,
+        position.longitude,
       );
 
       return LocationData(
@@ -81,8 +91,12 @@ class LocationService {
 
   static String _buildFullAddress(Placemark? p) {
     if (p == null) return '--';
-    return [p.street, p.subLocality, p.locality, p.administrativeArea, p.country]
-        .where((s) => s != null && s.isNotEmpty)
-        .join(', ');
+    return [
+      p.street,
+      p.subLocality,
+      p.locality,
+      p.administrativeArea,
+      p.country
+    ].where((s) => s != null && s.isNotEmpty).join(', ');
   }
 }

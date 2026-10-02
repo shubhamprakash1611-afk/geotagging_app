@@ -10,8 +10,10 @@ class WeatherData {
   });
 
   factory WeatherData.empty() => const WeatherData(
-    temperatureCelsius: 0, windSpeedKmh: 0, humidityPercent: 0,
-  );
+        temperatureCelsius: 0,
+        windSpeedKmh: 0,
+        humidityPercent: 0,
+      );
 
   // Parse the Open-Meteo JSON response
   factory WeatherData.fromOpenMeteoJson(Map<String, dynamic> json) {

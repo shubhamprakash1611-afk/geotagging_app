@@ -66,10 +66,13 @@ class _BracketPainter extends CustomPainter {
     canvas.drawLine(Offset(size.width, 0), Offset(size.width, len), paint);
     // Bottom-left corner
     canvas.drawLine(Offset(0, size.height), Offset(len, size.height), paint);
-    canvas.drawLine(Offset(0, size.height), Offset(0, size.height - len), paint);
+    canvas.drawLine(
+        Offset(0, size.height), Offset(0, size.height - len), paint);
     // Bottom-right corner
-    canvas.drawLine(Offset(size.width, size.height), Offset(size.width - len, size.height), paint);
-    canvas.drawLine(Offset(size.width, size.height), Offset(size.width, size.height - len), paint);
+    canvas.drawLine(Offset(size.width, size.height),
+        Offset(size.width - len, size.height), paint);
+    canvas.drawLine(Offset(size.width, size.height),
+        Offset(size.width, size.height - len), paint);
   }
 
   @override

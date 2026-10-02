@@ -1,11 +1,11 @@
 class LocationData {
   final double latitude;
   final double longitude;
-  final double altitude;          // meters
-  final String locationName;      // e.g., "Treetop Hideaways, Georgia, USA"
-  final String fullAddress;       // e.g., "576 Chattanooga Valley Rd, Flintstone"
+  final double altitude; // meters
+  final String locationName; // e.g., "Treetop Hideaways, Georgia, USA"
+  final String fullAddress; // e.g., "576 Chattanooga Valley Rd, Flintstone"
   final String zipCode;
-  final String plusCode;          // Open Location Code
+  final String plusCode; // Open Location Code
   final DateTime timestamp;
 
   final String city;
@@ -16,9 +16,10 @@ class LocationData {
   String get flagEmoji {
     if (countryCode.isEmpty || countryCode.length != 2) return '';
     return countryCode.toUpperCase().replaceAllMapped(
-      RegExp(r'[A-Z]'),
-      (match) => String.fromCharCode(match.group(0)!.codeUnitAt(0) + 127397),
-    );
+          RegExp(r'[A-Z]'),
+          (match) =>
+              String.fromCharCode(match.group(0)!.codeUnitAt(0) + 127397),
+        );
   }
 
   const LocationData({
@@ -38,12 +39,19 @@ class LocationData {
 
   // Fallback for when location is unavailable
   factory LocationData.empty() => LocationData(
-    latitude: 0, longitude: 0, altitude: 0,
-    locationName: 'Location unavailable',
-    fullAddress: '--', zipCode: '--', plusCode: '--',
-    timestamp: DateTime.now(),
-    city: '', state: '', country: '', countryCode: '',
-  );
+        latitude: 0,
+        longitude: 0,
+        altitude: 0,
+        locationName: 'Location unavailable',
+        fullAddress: '--',
+        zipCode: '--',
+        plusCode: '--',
+        timestamp: DateTime.now(),
+        city: '',
+        state: '',
+        country: '',
+        countryCode: '',
+      );
 
   LocationData copyWith({
     double? latitude,

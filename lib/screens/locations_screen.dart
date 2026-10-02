@@ -17,7 +17,8 @@ class LocationsScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-        title: const Text('Saved Locations', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Saved Locations',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.add, color: AppColors.accentGreen),
@@ -45,18 +46,23 @@ class LocationsScreen extends StatelessWidget {
             separatorBuilder: (_, __) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
               final loc = locations[index];
-              final bool isActive = loc.isInRange(state.location.latitude, state.location.longitude);
+              final bool isActive = loc.isInRange(
+                  state.location.latitude, state.location.longitude);
 
               return Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isActive ? AppColors.accentGreen : Colors.transparent,
+                    color:
+                        isActive ? AppColors.accentGreen : Colors.transparent,
                     width: 2,
                   ),
                   boxShadow: const [
-                    BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
+                    BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 8,
+                        offset: Offset(0, 2)),
                   ],
                 ),
                 padding: const EdgeInsets.all(12),
@@ -84,39 +90,52 @@ class LocationsScreen extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   loc.title,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               if (isActive)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppColors.accentGreen.withValues(alpha: 0.2),
+                                    color: AppColors.accentGreen
+                                        .withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: const Text('Active', style: TextStyle(color: AppColors.accentGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  child: const Text('Active',
+                                      style: TextStyle(
+                                          color: AppColors.accentGreen,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold)),
                                 ),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Text(
                             loc.address,
-                            style: const TextStyle(color: Colors.black54, fontSize: 12),
+                            style: const TextStyle(
+                                color: Colors.black54, fontSize: 12),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              const Icon(Icons.radar, size: 14, color: Colors.blueGrey),
+                              const Icon(Icons.radar,
+                                  size: 14, color: Colors.blueGrey),
                               const SizedBox(width: 4),
-                              Text('${loc.rangeMeters}m Geofence', style: const TextStyle(color: Colors.blueGrey, fontSize: 11)),
+                              Text('${loc.rangeMeters}m Geofence',
+                                  style: const TextStyle(
+                                      color: Colors.blueGrey, fontSize: 11)),
                               const Spacer(),
                               InkWell(
                                 onTap: () => state.removeSavedLocation(loc.id),
-                                child: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                                child: const Icon(Icons.delete_outline,
+                                    size: 20, color: Colors.red),
                               ),
                             ],
                           ),
@@ -136,7 +155,8 @@ class LocationsScreen extends StatelessWidget {
   void _showAddLocationModal(BuildContext context) {
     final state = context.read<AppStateProvider>();
     if (!state.locationAvailable) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location is not available yet.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location is not available yet.')));
       return;
     }
 
@@ -174,7 +194,7 @@ class LocationsScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 if (titleController.text.trim().isEmpty) return;
-                
+
                 final newLoc = SavedLocation(
                   id: const Uuid().v4(),
                   title: titleController.text.trim(),
@@ -186,11 +206,12 @@ class LocationsScreen extends StatelessWidget {
                   country: state.location.country,
                   createdAt: DateTime.now(),
                 );
-                
+
                 state.addSavedLocation(newLoc);
                 Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentGreen),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentGreen),
               child: const Text('Save', style: TextStyle(color: Colors.white)),
             ),
           ],
@@ -199,4 +220,3 @@ class LocationsScreen extends StatelessWidget {
     );
   }
 }
-

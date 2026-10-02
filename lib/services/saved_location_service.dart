@@ -10,7 +10,9 @@ class SavedLocationService {
       final prefs = await SharedPreferences.getInstance();
       final List<String>? jsonList = prefs.getStringList(_key);
       if (jsonList != null) {
-        return jsonList.map((str) => SavedLocation.fromJson(jsonDecode(str))).toList();
+        return jsonList
+            .map((str) => SavedLocation.fromJson(jsonDecode(str)))
+            .toList();
       }
     } catch (e) {
       // Ignored
@@ -21,11 +23,11 @@ class SavedLocationService {
   static Future<void> saveLocations(List<SavedLocation> locations) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final List<String> jsonList = locations.map((l) => jsonEncode(l.toJson())).toList();
+      final List<String> jsonList =
+          locations.map((l) => jsonEncode(l.toJson())).toList();
       await prefs.setStringList(_key, jsonList);
     } catch (e) {
       // Ignored
     }
   }
 }
-

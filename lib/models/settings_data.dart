@@ -1,9 +1,12 @@
-import 'dart:convert';
 import 'package:camera/camera.dart';
 
 enum GeoTagPlacement { top, bottom }
+
 enum ImageResolution { high, medium, low }
+
 enum MapType { street, earth }
+
+enum AppLanguage { en, hi }
 
 class SettingsData {
   final GeoTagPlacement geoTagPlacement;
@@ -19,6 +22,7 @@ class SettingsData {
   final bool showPlusCode;
   final bool showWatermark;
   final bool hapticFeedbackEnabled;
+  final AppLanguage language;
 
   const SettingsData({
     required this.geoTagPlacement,
@@ -34,6 +38,7 @@ class SettingsData {
     required this.showPlusCode,
     required this.showWatermark,
     required this.hapticFeedbackEnabled,
+    required this.language,
   });
 
   static const SettingsData defaultSettings = SettingsData(
@@ -44,12 +49,14 @@ class SettingsData {
     mapZoomLevel: 14.0,
     mapType: MapType.street,
     saveDirectory: 'GeoTagCamera',
-    activeTemplateId: 'advance', // Setting 'advance' as default since it matches reference mostly
+    activeTemplateId:
+        'advance', // Setting 'advance' as default since it matches reference mostly
     showWeatherData: true,
     showSensorData: true,
     showPlusCode: true,
     showWatermark: true,
     hapticFeedbackEnabled: true,
+    language: AppLanguage.en,
   );
 
   ResolutionPreset toResolutionPreset() {
@@ -77,6 +84,7 @@ class SettingsData {
     bool? showPlusCode,
     bool? showWatermark,
     bool? hapticFeedbackEnabled,
+    AppLanguage? language,
   }) {
     return SettingsData(
       geoTagPlacement: geoTagPlacement ?? this.geoTagPlacement,
@@ -91,7 +99,9 @@ class SettingsData {
       showSensorData: showSensorData ?? this.showSensorData,
       showPlusCode: showPlusCode ?? this.showPlusCode,
       showWatermark: showWatermark ?? this.showWatermark,
-      hapticFeedbackEnabled: hapticFeedbackEnabled ?? this.hapticFeedbackEnabled,
+      hapticFeedbackEnabled:
+          hapticFeedbackEnabled ?? this.hapticFeedbackEnabled,
+      language: language ?? this.language,
     );
   }
 
@@ -110,14 +120,17 @@ class SettingsData {
       'showPlusCode': showPlusCode,
       'showWatermark': showWatermark,
       'hapticFeedbackEnabled': hapticFeedbackEnabled,
+      'language': language.name,
     };
   }
 
   factory SettingsData.fromJson(Map<String, dynamic> json) {
     return SettingsData(
-      geoTagPlacement: GeoTagPlacement.values.byName(json['geoTagPlacement'] ?? GeoTagPlacement.bottom.name),
+      geoTagPlacement: GeoTagPlacement.values
+          .byName(json['geoTagPlacement'] ?? GeoTagPlacement.bottom.name),
       geoTagEnabled: json['geoTagEnabled'] ?? true,
-      imageResolution: ImageResolution.values.byName(json['imageResolution'] ?? ImageResolution.high.name),
+      imageResolution: ImageResolution.values
+          .byName(json['imageResolution'] ?? ImageResolution.high.name),
       shutterSoundEnabled: json['shutterSoundEnabled'] ?? true,
       mapZoomLevel: (json['mapZoomLevel'] ?? 14.0).toDouble(),
       mapType: MapType.values.byName(json['mapType'] ?? MapType.street.name),
@@ -128,7 +141,8 @@ class SettingsData {
       showPlusCode: json['showPlusCode'] ?? true,
       showWatermark: json['showWatermark'] ?? true,
       hapticFeedbackEnabled: json['hapticFeedbackEnabled'] ?? true,
+      language:
+          AppLanguage.values.byName(json['language'] ?? AppLanguage.en.name),
     );
   }
 }
-

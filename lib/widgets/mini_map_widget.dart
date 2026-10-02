@@ -36,8 +36,8 @@ class MiniMapWidget extends StatelessWidget {
     final appState = context.watch<AppStateProvider>();
     final mapType = appState.settings.mapType;
     // Earth view needs to be zoomed in 3 levels closer, but max zoom for Google is usually 20-21
-    final double zoomLevel = mapType == MapType.earth 
-        ? (appState.settings.mapZoomLevel + 3).clamp(10.0, 20.0) 
+    final double zoomLevel = mapType == MapType.earth
+        ? (appState.settings.mapZoomLevel + 3).clamp(10.0, 20.0)
         : appState.settings.mapZoomLevel;
 
     // OpenStreetMap (Street) vs Google Hybrid (Earth)
@@ -64,10 +64,11 @@ class MiniMapWidget extends StatelessWidget {
               urlTemplate: urlTemplate,
               userAgentPackageName: 'com.geotagging.app',
               // Note: Only use caching for OSM to avoid Google ToS issues, or bypass caching for Earth view.
-              tileProvider: mapType == MapType.street 
-                  ? const FMTCStore('mapStore').getTileProvider() 
+              tileProvider: mapType == MapType.street
+                  ? const FMTCStore('mapStore').getTileProvider()
                   : NetworkTileProvider(),
-              errorImage: const NetworkImage('https://raw.githubusercontent.com/flutter_map/flutter_map/master/example/assets/map/error.png'),
+              errorImage: const NetworkImage(
+                  'https://raw.githubusercontent.com/flutter_map/flutter_map/master/example/assets/map/error.png'),
             ),
             MarkerLayer(
               markers: [
@@ -89,5 +90,3 @@ class MiniMapWidget extends StatelessWidget {
     );
   }
 }
-
-

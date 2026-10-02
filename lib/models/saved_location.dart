@@ -63,8 +63,10 @@ class SavedLocation {
     final deltaLambda = (lon - longitude) * math.pi / 180;
 
     final a = math.sin(deltaPhi / 2) * math.sin(deltaPhi / 2) +
-        math.cos(phi1) * math.cos(phi2) *
-        math.sin(deltaLambda / 2) * math.sin(deltaLambda / 2);
+        math.cos(phi1) *
+            math.cos(phi2) *
+            math.sin(deltaLambda / 2) *
+            math.sin(deltaLambda / 2);
     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
 
     return R * c; // in metres
@@ -74,4 +76,3 @@ class SavedLocation {
     return distanceTo(lat, lon) <= rangeMeters;
   }
 }
-

@@ -1,5 +1,4 @@
 import 'dart:ui' as ui;
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -18,7 +17,6 @@ import 'locations_screen.dart';
 import '../widgets/top_controls_bar.dart';
 import '../widgets/grid_overlay.dart';
 import '../widgets/focus_bracket.dart';
-import '../widgets/zoom_mode_selector.dart';
 import '../widgets/dashboard_overlay.dart';
 import '../widgets/bottom_nav_bar.dart';
 
@@ -29,7 +27,8 @@ class CameraScreen extends StatefulWidget {
   State<CameraScreen> createState() => _CameraScreenState();
 }
 
-class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver {
+class _CameraScreenState extends State<CameraScreen>
+    with WidgetsBindingObserver {
   CameraController? _cameraController;
   bool _isCameraReady = false;
   ImageResolution _currentResolution = ImageResolution.high;
@@ -51,18 +50,18 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
   Future<void> _initializeCamera() async {
     if (availableCameras.isEmpty) return;
 
+    final appState = context.read<AppStateProvider>();
+
     if (_cameraController != null) {
       await _cameraController!.dispose();
     }
 
-    final appState = context.read<AppStateProvider>();
     _currentResolution = appState.settings.imageResolution;
 
     _cameraController = CameraController(
       availableCameras[_currentCameraIndex],
       appState.settings.toResolutionPreset(),
       enableAudio: false,
-      imageFormatGroup: ImageFormatGroup.jpeg,
     );
 
     try {
@@ -72,7 +71,6 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
         _isCameraReady = true;
       });
 
-      final appState = context.read<AppStateProvider>();
       await _cameraController!.setFlashMode(
         appState.isFlashOn ? FlashMode.torch : FlashMode.off,
       );
@@ -115,10 +113,15 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
     _currentCameraIndex = (_currentCameraIndex + 1) % availableCameras.length;
     await _initializeCamera();
   }
+
   Future<void> _onShutterPressed() async {
     final appState = context.read<AppStateProvider>();
-    if (appState.isCapturing) return; // Debounce
+    if (appState.isCapturing ||
+        _cameraController?.value.isInitialized != true) {
+      return;
+    }
 
+    final captureStopwatch = Stopwatch()..start();
     appState.setCapturing(true);
 
     try {
@@ -136,43 +139,57 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
         player.play(AssetSource('sounds/shutter.mp3')).catchError((_) {});
       }
 
-      // Read camera bytes
-      final Uint8List cameraBytes = await file.readAsBytes();
-
-      // Capture the overlay widget as ui.Image directly (no PNG conversion)
+      // Capture only the relatively small overlay on Flutter's UI thread.
+      // Full-resolution photo work is delegated to native background workers.
       ui.Image? overlayUiImage;
       if (appState.settings.geoTagEnabled) {
-        final boundary = _dashboardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-        if (boundary != null && boundary.size.width > 0 && boundary.size.height > 0) {
+        final boundary = _dashboardKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
+        if (boundary != null &&
+            boundary.size.width > 0 &&
+            boundary.size.height > 0) {
           overlayUiImage = await boundary.toImage(pixelRatio: 2.0);
         }
       }
 
-      // Release the spinner immediately — user can take another photo now
+      // Release the shutter immediately; gallery work continues separately.
       appState.setCapturing(false);
 
       // Save settings snapshot for background work
       final settingsSnapshot = appState.settings;
 
-      // GPU-accelerated compositing + save (runs async, ~1 second total)
-      ImageCompilationService.burnAndSaveWithUiImage(
-        cameraImageBytes: cameraBytes,
+      // Native Android JPEG compositing and MediaStore publication run in the
+      // background, allowing another photo to be taken immediately.
+      ImageCompilationService.burnAndSave(
+        cameraImagePath: file.path,
         overlayUiImage: overlayUiImage,
         settings: settingsSnapshot,
       ).then((success) {
+        debugPrint(
+          'Capture-to-gallery ${success ? 'completed' : 'failed'} '
+          'in ${captureStopwatch.elapsedMilliseconds}ms',
+        );
         if (settingsSnapshot.hapticFeedbackEnabled && success) {
           HapticFeedback.vibrate();
         }
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(success ? '✅ Photo saved to gallery!' : '❌ Failed to save photo'),
-              backgroundColor: success ? Colors.green[700] : Colors.red[700],
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          );
+          final messenger = ScaffoldMessenger.of(context);
+          messenger
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(success
+                    ? 'Photo saved to gallery'
+                    : 'Failed to save photo'),
+                backgroundColor: success ? Colors.green[700] : Colors.red[700],
+                duration: const Duration(seconds: 1),
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 225),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
         }
       });
     } catch (e) {
@@ -186,7 +203,8 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
     if (!_isCameraReady) {
       return const Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF00E676))),
+        body:
+            Center(child: CircularProgressIndicator(color: Color(0xFF00E676))),
       );
     }
 
@@ -200,97 +218,132 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
 
         return Scaffold(
           backgroundColor: Colors.black,
-          body: Stack(
-            children: [
-              // Layer 1: Camera Preview (full screen)
-              Positioned.fill(
-                child: CameraPreview(_cameraController!),
-              ),
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final bottomControlsHeight =
+                  (constraints.maxHeight * 0.235).clamp(184.0, 224.0);
 
-              // Layer 2: Grid Overlay (togglable)
-              if (state.isGridVisible)
-                const Positioned.fill(child: GridOverlay()),
+              return Stack(
+                children: [
+                  // Layer 1: Camera Preview (letterboxed to preserve exact field of view)
+                  Positioned.fill(
+                    child: ClipRect(
+                      child: FittedBox(
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: _cameraController!.value.previewSize!.height,
+                          height: _cameraController!.value.previewSize!.width,
+                          child: CameraPreview(_cameraController!),
+                        ),
+                      ),
+                    ),
+                  ),
 
-              // Layer 3: Focus Brackets (center)
-              const Center(child: FocusBracket()),
+                  // Layer 2: Grid Overlay (togglable)
+                  if (state.isGridVisible)
+                    const Positioned.fill(child: GridOverlay()),
 
-              // Layer 4: Top Controls
-              Positioned(
-                top: 0, left: 0, right: 0,
-                child: TopControlsBar(
-                  onFlashToggled: () async {
-                    if (_cameraController != null && _cameraController!.value.isInitialized) {
-                      try {
-                        final appState = context.read<AppStateProvider>();
-                        await _cameraController!.setFlashMode(
-                          appState.isFlashOn ? FlashMode.torch : FlashMode.off,
+                  // Layer 3: Focus Brackets (center)
+                  const Center(child: FocusBracket()),
+
+                  // Layer 4: Top Controls
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: TopControlsBar(
+                      onFlashToggled: () async {
+                        if (_cameraController != null &&
+                            _cameraController!.value.isInitialized) {
+                          try {
+                            final appState = context.read<AppStateProvider>();
+                            await _cameraController!.setFlashMode(
+                              appState.isFlashOn
+                                  ? FlashMode.torch
+                                  : FlashMode.off,
+                            );
+                          } catch (e) {
+                            debugPrint('Flash toggle error: $e');
+                          }
+                        }
+                      },
+                      onSettingsPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          useSafeArea: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => const SettingsScreen(),
                         );
-                      } catch (e) {
-                        debugPrint('Flash toggle error: $e');
-                      }
-                    }
-                  },
-                  onSettingsPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => const SettingsScreen(),
-                    );
-                  },
-                ),
-              ),
+                      },
+                    ),
+                  ),
 
-              // Layer 5 (Now part of BottomNavBar)
-              // Layer 6: Dashboard Overlay (wrapped in RepaintBoundary for burning)
-              Positioned(
-                bottom: state.settings.geoTagPlacement == GeoTagPlacement.bottom ? 250 : null,
-                top: state.settings.geoTagPlacement == GeoTagPlacement.top ? 120 : null,
-                left: 10, right: 10,
-                child: RepaintBoundary(
-                  key: _dashboardKey,
-                  child: const DashboardOverlay(),
-                ),
-              ),
+                  // Layer 5 (Now part of BottomNavBar)
+                  // Layer 6: Dashboard Overlay (wrapped in RepaintBoundary for burning)
+                  Positioned(
+                    bottom:
+                        state.settings.geoTagPlacement == GeoTagPlacement.bottom
+                            ? bottomControlsHeight + 10
+                            : null,
+                    top: state.settings.geoTagPlacement == GeoTagPlacement.top
+                        ? MediaQuery.paddingOf(context).top + 78
+                        : null,
+                    left: 12,
+                    right: 12,
+                    child: RepaintBoundary(
+                      key: _dashboardKey,
+                      child: const DashboardOverlay(),
+                    ),
+                  ),
 
-              // Layer 7: Bottom Nav Bar
-              Positioned(
-                bottom: 0, left: 0, right: 0,
-                child: BottomNavBar(
-                  isCapturing: state.isCapturing,
-                  hapticFeedbackEnabled: state.settings.hapticFeedbackEnabled,
-                  onZoomChanged: (zoom) async {
-                    if (_cameraController != null) {
-                      try {
-                        await _cameraController!.setZoomLevel(zoom);
-                      } catch (e) {
-                        debugPrint('Zoom error: $e');
-                      }
-                    }
-                  },
-                  onShutterPressed: _onShutterPressed,
-                  onCollectionPressed: () async {
-                    final uri = Uri.parse('content://media/external/images/media');
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri);
-                    }
-                  },
-                  onMapDataPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LocationsScreen()),
-                    );
-                  },
-                  onCameraFlipPressed: _onCameraFlip,
-                  onTemplatesPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const TemplateScreen()),
-                    );
-                  },
-                ),
-              ),
-            ],
+                  // Layer 7: Bottom Nav Bar
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: BottomNavBar(
+                      isCapturing: state.isCapturing,
+                      hapticFeedbackEnabled:
+                          state.settings.hapticFeedbackEnabled,
+                      language: state.settings.language,
+                      onZoomChanged: (zoom) async {
+                        if (_cameraController != null) {
+                          try {
+                            await _cameraController!.setZoomLevel(zoom);
+                          } catch (e) {
+                            debugPrint('Zoom error: $e');
+                          }
+                        }
+                      },
+                      onShutterPressed: _onShutterPressed,
+                      onCollectionPressed: () async {
+                        final uri =
+                            Uri.parse('content://media/external/images/media');
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri);
+                        }
+                      },
+                      onMapDataPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const LocationsScreen()),
+                        );
+                      },
+                      onCameraFlipPressed: _onCameraFlip,
+                      onTemplatesPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const TemplateScreen()),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         );
       },

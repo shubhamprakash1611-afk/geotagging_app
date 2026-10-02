@@ -18,6 +18,7 @@ class AppStateProvider extends ChangeNotifier {
   SensorData _sensor = SensorData.empty();
 
   bool _isLocationLoading = true;
+  int _locationRequestId = 0;
   Timer? _locationRetryTimer;
   Timer? _locationRefreshTimer;
 
@@ -36,7 +37,9 @@ class AppStateProvider extends ChangeNotifier {
   // --- Getters ---
   LocationData get location {
     final manualLoc = activeManualLocation;
-    if (manualLoc != null) {
+    // Saved locations currently contain only one address language. Do not let
+    // an English saved address overwrite a freshly reverse-geocoded Hindi one.
+    if (manualLoc != null && _settings.language == AppLanguage.en) {
       return _location.copyWith(
         fullAddress: '${manualLoc.title} - ${manualLoc.address}',
         city: manualLoc.city,
@@ -46,11 +49,13 @@ class AppStateProvider extends ChangeNotifier {
     }
     return _location;
   }
+
   WeatherData get weather => _weather;
   SensorData get sensor => _sensor;
 
   bool get isLocationLoading => _isLocationLoading;
-  bool get locationAvailable => _location.latitude != 0 || _location.longitude != 0;
+  bool get locationAvailable =>
+      _location.latitude != 0 || _location.longitude != 0;
 
   SettingsData get settings => _settings;
   List<SavedLocation> get savedLocations => _savedLocations;
@@ -73,9 +78,14 @@ class AppStateProvider extends ChangeNotifier {
   bool get isCapturing => _isCapturing;
 
   Future<void> updateSettings(SettingsData newSettings) async {
+    final languageChanged = _settings.language != newSettings.language;
     _settings = newSettings;
     notifyListeners();
     await SettingsService.saveSettings(newSettings);
+
+    if (languageChanged) {
+      await refreshLocationData();
+    }
   }
 
   Future<void> addSavedLocation(SavedLocation loc) async {
@@ -97,12 +107,12 @@ class AppStateProvider extends ChangeNotifier {
   Future<void> initializeAllServices() async {
     _settings = await SettingsService.loadSettings();
     _savedLocations = await SavedLocationService.loadLocations();
-    
+
     _isLocationLoading = true;
     notifyListeners();
 
     await refreshLocationData();
-    
+
     // Start periodic refresh (every 30 seconds)
     _locationRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (!_isCapturing) refreshLocationData();
@@ -124,14 +134,28 @@ class AppStateProvider extends ChangeNotifier {
   }
 
   Future<void> refreshLocationData() async {
+    final requestId = ++_locationRequestId;
+    final requestedLanguage = _settings.language;
+
     try {
-      _location = await LocationService.getCurrentLocation();
+      final locale = requestedLanguage == AppLanguage.hi ? 'hi_IN' : 'en_US';
+      final refreshedLocation =
+          await LocationService.getCurrentLocation(localeIdentifier: locale);
+
+      // A language change may start a second refresh while the original GPS
+      // request is still running. Never let that stale result win the race.
+      if (requestId != _locationRequestId ||
+          requestedLanguage != _settings.language) {
+        return;
+      }
+
+      _location = refreshedLocation;
       _isLocationLoading = false;
       notifyListeners();
-      
+
       // Stop retry timer if successful
       _locationRetryTimer?.cancel();
-      
+
       // Only fetch weather if location is valid
       if (locationAvailable) {
         _weather = await WeatherService.fetchWeather(
@@ -145,21 +169,41 @@ class AppStateProvider extends ChangeNotifier {
       if (_isLocationLoading) {
         // Schedule retry
         _locationRetryTimer?.cancel();
-        _locationRetryTimer = Timer(const Duration(seconds: 5), refreshLocationData);
+        _locationRetryTimer =
+            Timer(const Duration(seconds: 5), refreshLocationData);
       }
     }
   }
 
   // --- Camera Controls ---
-  void toggleFlash() { _isFlashOn = !_isFlashOn; notifyListeners(); }
-  void toggleGrid() { _isGridVisible = !_isGridVisible; notifyListeners(); }
+  void toggleFlash() {
+    _isFlashOn = !_isFlashOn;
+    notifyListeners();
+  }
+
+  void toggleGrid() {
+    _isGridVisible = !_isGridVisible;
+    notifyListeners();
+  }
+
   void setZoom(double newZoom) {
     if (newZoom < 1.0) newZoom = 1.0;
     _currentZoom = newZoom;
     notifyListeners();
   }
-  void setMode(String m) { _currentMode = m; notifyListeners(); }
-  void setCapturing(bool v) { _isCapturing = v; notifyListeners(); }
-  void setUserNote(String n) { _userNote = n; notifyListeners(); }
 
+  void setMode(String m) {
+    _currentMode = m;
+    notifyListeners();
+  }
+
+  void setCapturing(bool v) {
+    _isCapturing = v;
+    notifyListeners();
+  }
+
+  void setUserNote(String n) {
+    _userNote = n;
+    notifyListeners();
+  }
 }

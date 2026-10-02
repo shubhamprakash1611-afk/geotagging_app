@@ -22,12 +22,16 @@ class _GridPainter extends CustomPainter {
       ..strokeWidth = 0.8;
 
     // Vertical lines (rule of thirds)
-    canvas.drawLine(Offset(size.width / 3, 0), Offset(size.width / 3, size.height), paint);
-    canvas.drawLine(Offset(2 * size.width / 3, 0), Offset(2 * size.width / 3, size.height), paint);
+    canvas.drawLine(
+        Offset(size.width / 3, 0), Offset(size.width / 3, size.height), paint);
+    canvas.drawLine(Offset(2 * size.width / 3, 0),
+        Offset(2 * size.width / 3, size.height), paint);
 
     // Horizontal lines
-    canvas.drawLine(Offset(0, size.height / 3), Offset(size.width, size.height / 3), paint);
-    canvas.drawLine(Offset(0, 2 * size.height / 3), Offset(size.width, 2 * size.height / 3), paint);
+    canvas.drawLine(
+        Offset(0, size.height / 3), Offset(size.width, size.height / 3), paint);
+    canvas.drawLine(Offset(0, 2 * size.height / 3),
+        Offset(size.width, 2 * size.height / 3), paint);
   }
 
   @override

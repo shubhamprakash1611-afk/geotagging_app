@@ -5,10 +5,10 @@ import 'dart:math';
 class PlusCodeGenerator {
   static const String _alphabet = '23456789CFGHJMPQRVWX';
   static const int _pairCodeLength = 10;
-  static const double _gridSizeDegrees = 0.000125;
 
   /// Encode lat/lon into a Plus Code string (e.g., "87G8Q2PQ+VX")
-  static String encode(double latitude, double longitude, {int codeLength = 10}) {
+  static String encode(double latitude, double longitude,
+      {int codeLength = 10}) {
     // Clamp values
     latitude = latitude.clamp(-90.0, 90.0);
     longitude = _normalizeLongitude(longitude);
@@ -69,8 +69,12 @@ class PlusCodeGenerator {
   }
 
   static double _normalizeLongitude(double lon) {
-    while (lon < -180) lon += 360;
-    while (lon >= 180) lon -= 360;
+    while (lon < -180) {
+      lon += 360;
+    }
+    while (lon >= 180) {
+      lon -= 360;
+    }
     return lon;
   }
 

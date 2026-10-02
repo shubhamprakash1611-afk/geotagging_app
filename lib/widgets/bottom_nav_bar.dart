@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'shutter_button.dart';
-import '../utils/constants.dart';
+import '../utils/app_translations.dart';
+import '../models/settings_data.dart';
 import 'zoom_mode_selector.dart';
 
 class BottomNavBar extends StatelessWidget {
@@ -12,6 +13,7 @@ class BottomNavBar extends StatelessWidget {
   final Function(double) onZoomChanged;
   final bool isCapturing;
   final bool hapticFeedbackEnabled;
+  final AppLanguage language;
 
   const BottomNavBar({
     super.key,
@@ -23,16 +25,24 @@ class BottomNavBar extends StatelessWidget {
     required this.onZoomChanged,
     this.isCapturing = false,
     this.hapticFeedbackEnabled = true,
+    required this.language,
   });
 
   @override
   Widget build(BuildContext context) {
+    final t = AppTranslations(language);
+
     return Container(
-      padding: const EdgeInsets.only(top: 8, bottom: 12),
+      padding: const EdgeInsets.only(top: 9, bottom: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceDark.withValues(alpha: 0.95),
+        gradient: const LinearGradient(
+          colors: [Color(0xF5121828), Color(0xFC080B14)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.08), width: 1),
+          top:
+              BorderSide(color: Colors.white.withValues(alpha: 0.08), width: 1),
         ),
       ),
       child: SafeArea(
@@ -41,20 +51,24 @@ class BottomNavBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ZoomModeSelector(onZoomChanged: onZoomChanged),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _buildNavItem(Icons.collections, 'Collection', onCollectionPressed),
-                _buildNavItem(Icons.map_outlined, 'Map Data', onMapDataPressed),
+                _buildNavItem(Icons.photo_library_outlined,
+                    t.text('collection'), onCollectionPressed),
+                _buildNavItem(
+                    Icons.map_outlined, t.text('mapData'), onMapDataPressed),
                 ShutterButton(
-                  onPressed: onShutterPressed, 
+                  onPressed: onShutterPressed,
                   isCapturing: isCapturing,
                   hapticFeedbackEnabled: hapticFeedbackEnabled,
                 ),
-                _buildNavItem(Icons.flip_camera_android, 'Camera Flip', onCameraFlipPressed),
-                _buildNavItem(Icons.auto_awesome_mosaic, 'Templates', onTemplatesPressed),
+                _buildNavItem(Icons.flip_camera_android_rounded,
+                    t.text('cameraFlip'), onCameraFlipPressed),
+                _buildNavItem(Icons.dashboard_customize_outlined,
+                    t.text('template'), onTemplatesPressed),
               ],
             ),
           ],
@@ -64,18 +78,23 @@ class BottomNavBar extends StatelessWidget {
   }
 
   Widget _buildNavItem(IconData icon, String label, VoidCallback onTap) {
-    return GestureDetector(
+    return InkResponse(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white70, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white54, fontSize: 10),
-          ),
-        ],
+      radius: 32,
+      child: SizedBox(
+        width: 58,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white70, size: 23),
+            const SizedBox(height: 4),
+            Text(label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white60, fontSize: 9.5)),
+          ],
+        ),
       ),
     );
   }
