@@ -3,6 +3,7 @@ import 'shutter_button.dart';
 import '../utils/app_translations.dart';
 import '../models/settings_data.dart';
 import 'zoom_mode_selector.dart';
+import '../utils/constants.dart';
 
 class BottomNavBar extends StatelessWidget {
   final VoidCallback onShutterPressed;
@@ -33,10 +34,10 @@ class BottomNavBar extends StatelessWidget {
     final t = AppTranslations(language);
 
     return Container(
-      padding: const EdgeInsets.only(top: 9, bottom: 8),
+      padding: const EdgeInsets.only(top: 8, bottom: 6),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xF5121828), Color(0xFC080B14)],
+          colors: [Color(0xF5172335), AppColors.background],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -51,7 +52,7 @@ class BottomNavBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ZoomModeSelector(onZoomChanged: onZoomChanged),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -78,22 +79,41 @@ class BottomNavBar extends StatelessWidget {
   }
 
   Widget _buildNavItem(IconData icon, String label, VoidCallback onTap) {
-    return InkResponse(
-      onTap: onTap,
-      radius: 32,
-      child: SizedBox(
-        width: 58,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white70, size: 23),
-            const SizedBox(height: 4),
-            Text(label,
+    return Tooltip(
+      message: label,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 32,
+        child: SizedBox(
+          width: 58,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.055),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
+                ),
+                child: Icon(icon, color: AppColors.textSecondary, size: 20),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white60, fontSize: 9.5)),
-          ],
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -11,6 +11,26 @@ class ImageCompilationService {
   static const MethodChannel _androidCompositor =
       MethodChannel('com.geotagging.app/image_compositor');
 
+  /// Temporarily maximizes Android display brightness for a selfie flash.
+  static Future<void> beginScreenFlash() async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _androidCompositor.invokeMethod<void>('beginScreenFlash');
+    } catch (error) {
+      debugPrint('Unable to start screen flash: $error');
+    }
+  }
+
+  /// Restores the display brightness that was active before selfie flash.
+  static Future<void> endScreenFlash() async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _androidCompositor.invokeMethod<void>('endScreenFlash');
+    } catch (error) {
+      debugPrint('Unable to stop screen flash: $error');
+    }
+  }
+
   /// Burns the rendered GeoTag overlay into the captured photo and publishes
   /// the finished JPEG to the gallery.
   ///
@@ -21,6 +41,7 @@ class ImageCompilationService {
     required String cameraImagePath,
     ui.Image? overlayUiImage,
     required SettingsData settings,
+    required double targetAspectRatio,
   }) async {
     final stopwatch = Stopwatch()..start();
 
@@ -36,7 +57,10 @@ class ImageCompilationService {
             'overlayBytes': overlayBytes,
             'placement': settings.geoTagPlacement.name,
             'directory': settings.saveDirectory,
-            'jpegQuality': 94,
+            // The camera JPEG must be decoded to burn in the template. Keep
+            // the unavoidable second JPEG pass visually near-lossless.
+            'jpegQuality': 98,
+            'targetAspectRatio': targetAspectRatio,
           },
         );
 
@@ -54,12 +78,33 @@ class ImageCompilationService {
         cameraImagePath: cameraImagePath,
         overlayBytes: overlayBytes,
         settings: settings,
+        targetAspectRatio: targetAspectRatio,
       );
     } catch (error, stackTrace) {
       debugPrint('Image compilation failed: $error\n$stackTrace');
       return false;
     } finally {
       overlayUiImage?.dispose();
+    }
+  }
+
+  /// Opens the newest image in this app's MediaStore collection.
+  ///
+  /// A generic `content://media/...` launch lets gallery apps choose their
+  /// home screen. The native implementation queries the configured GeoTag
+  /// directory and opens its newest image URI directly instead.
+  static Future<bool> openCollection({required String directory}) async {
+    if (!Platform.isAndroid) return false;
+
+    try {
+      return await _androidCompositor.invokeMethod<bool>(
+            'openCollection',
+            {'directory': directory},
+          ) ??
+          false;
+    } catch (error) {
+      debugPrint('Unable to open GeoTag collection: $error');
+      return false;
     }
   }
 
@@ -82,6 +127,7 @@ class ImageCompilationService {
     required String cameraImagePath,
     Uint8List? overlayBytes,
     required SettingsData settings,
+    required double targetAspectRatio,
   }) async {
     final cameraBytes = await File(cameraImagePath).readAsBytes();
     final cameraCodec = await ui.instantiateImageCodec(cameraBytes);
@@ -89,25 +135,57 @@ class ImageCompilationService {
     final cameraImage = cameraFrame.image;
 
     ui.Image? overlayImage;
-    ui.Image finalImage = cameraImage;
+    ui.Image? finalImage;
 
     try {
+      final sourceAspectRatio = cameraImage.width / cameraImage.height;
+      late final ui.Rect sourceRect;
+      if (sourceAspectRatio > targetAspectRatio) {
+        final cropWidth = cameraImage.height * targetAspectRatio;
+        sourceRect = ui.Rect.fromLTWH(
+          (cameraImage.width - cropWidth) / 2,
+          0,
+          cropWidth,
+          cameraImage.height.toDouble(),
+        );
+      } else {
+        final cropHeight = cameraImage.width / targetAspectRatio;
+        sourceRect = ui.Rect.fromLTWH(
+          0,
+          (cameraImage.height - cropHeight) / 2,
+          cameraImage.width.toDouble(),
+          cropHeight,
+        );
+      }
+
+      final outputWidth = sourceRect.width.round();
+      final outputHeight = sourceRect.height.round();
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+      canvas.drawImageRect(
+        cameraImage,
+        sourceRect,
+        ui.Rect.fromLTWH(
+          0,
+          0,
+          outputWidth.toDouble(),
+          outputHeight.toDouble(),
+        ),
+        ui.Paint()..filterQuality = ui.FilterQuality.high,
+      );
+
       if (overlayBytes != null && settings.geoTagEnabled) {
         final overlayCodec = await ui.instantiateImageCodec(overlayBytes);
         final overlayFrame = await overlayCodec.getNextFrame();
         overlayImage = overlayFrame.image;
 
-        final recorder = ui.PictureRecorder();
-        final canvas = ui.Canvas(recorder);
-        canvas.drawImage(cameraImage, ui.Offset.zero, ui.Paint());
-
-        final targetWidth = cameraImage.width * 0.95;
+        final targetWidth = outputWidth * 0.95;
         final scale = targetWidth / overlayImage.width;
         final scaledHeight = overlayImage.height * scale;
-        final destinationX = (cameraImage.width - targetWidth) / 2;
+        final destinationX = (outputWidth - targetWidth) / 2;
         final destinationY = settings.geoTagPlacement == GeoTagPlacement.top
-            ? cameraImage.height * 0.03
-            : cameraImage.height - scaledHeight - (cameraImage.height * 0.03);
+            ? outputHeight * 0.03
+            : outputHeight - scaledHeight - (outputHeight * 0.03);
 
         canvas
           ..save()
@@ -115,12 +193,11 @@ class ImageCompilationService {
           ..scale(scale)
           ..drawImage(overlayImage, ui.Offset.zero, ui.Paint())
           ..restore();
-
-        final picture = recorder.endRecording();
-        finalImage =
-            await picture.toImage(cameraImage.width, cameraImage.height);
-        picture.dispose();
       }
+
+      final picture = recorder.endRecording();
+      finalImage = await picture.toImage(outputWidth, outputHeight);
+      picture.dispose();
 
       final byteData =
           await finalImage.toByteData(format: ui.ImageByteFormat.png);
@@ -134,9 +211,7 @@ class ImageCompilationService {
       );
       return result['isSuccess'] == true;
     } finally {
-      if (!identical(finalImage, cameraImage)) {
-        finalImage.dispose();
-      }
+      finalImage?.dispose();
       overlayImage?.dispose();
       cameraImage.dispose();
       cameraCodec.dispose();

@@ -14,6 +14,22 @@ class AppTranslations {
   String get localeName => isHindi ? 'hi_IN' : 'en_US';
 
   static const Map<String, Map<AppLanguage, String>> _copy = {
+    'fetchingLocation': {
+      AppLanguage.en: 'Finding your location',
+      AppLanguage.hi: 'आपका स्थान खोजा जा रहा है'
+    },
+    'findingAddress': {
+      AppLanguage.en: 'Getting GPS coordinates and address…',
+      AppLanguage.hi: 'GPS निर्देशांक और पता प्राप्त हो रहा है…'
+    },
+    'updatingLanguage': {
+      AppLanguage.en: 'Updating language',
+      AppLanguage.hi: 'भाषा अपडेट हो रही है'
+    },
+    'localizingAddress': {
+      AppLanguage.en: 'Localizing your current address…',
+      AppLanguage.hi: 'आपके वर्तमान पते का अनुवाद हो रहा है…'
+    },
     'settings': {AppLanguage.en: 'Settings', AppLanguage.hi: 'सेटिंग्स'},
     'geotagOverlay': {
       AppLanguage.en: 'GeoTag overlay',

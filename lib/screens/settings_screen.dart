@@ -5,6 +5,7 @@ import '../models/settings_data.dart';
 import '../providers/app_state_provider.dart';
 import '../utils/app_translations.dart';
 import '../utils/constants.dart';
+import '../widgets/language_update_card.dart';
 import 'template_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -22,7 +23,7 @@ class SettingsScreen extends StatelessWidget {
           child: DecoratedBox(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF121827), Color(0xFF090D17)],
+                colors: [AppColors.surfaceRaised, AppColors.background],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -250,9 +251,26 @@ class SettingsScreen extends StatelessWidget {
                                       label: Text(t.text('hindi'))),
                                 ],
                                 selected: settings.language,
+                                enabled: !state.isLanguageChanging,
                                 onChanged: (value) => state.updateSettings(
                                     settings.copyWith(language: value)),
                               ),
+                            ),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 220),
+                              child: state.isLanguageChanging
+                                  ? Padding(
+                                      key: const ValueKey('language-progress'),
+                                      padding: const EdgeInsets.fromLTRB(
+                                          12, 0, 12, 12),
+                                      child: LanguageUpdateCard(
+                                        language: settings.language,
+                                        compact: true,
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(
+                                      key: ValueKey('language-ready'),
+                                    ),
                             ),
                           ],
                         ),
@@ -408,11 +426,13 @@ class _Segmented<T> extends StatelessWidget {
   final List<ButtonSegment<T>> segments;
   final T selected;
   final ValueChanged<T> onChanged;
+  final bool enabled;
 
   const _Segmented(
       {required this.segments,
       required this.selected,
-      required this.onChanged});
+      required this.onChanged,
+      this.enabled = true});
 
   @override
   Widget build(BuildContext context) {
@@ -420,7 +440,8 @@ class _Segmented<T> extends StatelessWidget {
       segments: segments,
       selected: {selected},
       showSelectedIcon: true,
-      onSelectionChanged: (selection) => onChanged(selection.first),
+      onSelectionChanged:
+          enabled ? (selection) => onChanged(selection.first) : null,
       style: ButtonStyle(
         visualDensity: VisualDensity.compact,
         backgroundColor: WidgetStateProperty.resolveWith((states) =>

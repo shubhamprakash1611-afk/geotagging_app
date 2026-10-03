@@ -32,4 +32,32 @@ void main() {
     expect(restored.language, AppLanguage.hi);
     expect(restored.activeTemplateId, 'reporting');
   });
+
+  test('capture ratio survives settings persistence round-trip', () {
+    final settings = SettingsData.defaultSettings.copyWith(
+      captureAspectRatio: CaptureAspectRatio.ratio9x16,
+    );
+
+    final restored = SettingsData.fromJson(settings.toJson());
+
+    expect(restored.captureAspectRatio, CaptureAspectRatio.ratio9x16);
+  });
+
+  test('legacy settings default to the full sensor 3:4 ratio', () {
+    final json = SettingsData.defaultSettings.toJson()
+      ..remove('captureAspectRatio');
+
+    final restored = SettingsData.fromJson(json);
+
+    expect(restored.captureAspectRatio, CaptureAspectRatio.ratio4x3);
+  });
+
+  test('legacy template identifiers are normalized on load', () {
+    final json = SettingsData.defaultSettings.toJson()
+      ..['activeTemplateId'] = 'advance_template';
+
+    final restored = SettingsData.fromJson(json);
+
+    expect(restored.activeTemplateId, 'advance');
+  });
 }

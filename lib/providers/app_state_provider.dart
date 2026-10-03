@@ -18,7 +18,9 @@ class AppStateProvider extends ChangeNotifier {
   SensorData _sensor = SensorData.empty();
 
   bool _isLocationLoading = true;
+  bool _isLanguageChanging = false;
   int _locationRequestId = 0;
+  int _languageChangeId = 0;
   Timer? _locationRetryTimer;
   Timer? _locationRefreshTimer;
 
@@ -31,7 +33,6 @@ class AppStateProvider extends ChangeNotifier {
   bool _isFlashOn = false;
   bool _isGridVisible = false;
   double _currentZoom = 1.0;
-  String _currentMode = 'PHOTO'; // PHOTO, VIDEO, QUICK SHARE
   bool _isCapturing = false;
 
   // --- Getters ---
@@ -54,6 +55,7 @@ class AppStateProvider extends ChangeNotifier {
   SensorData get sensor => _sensor;
 
   bool get isLocationLoading => _isLocationLoading;
+  bool get isLanguageChanging => _isLanguageChanging;
   bool get locationAvailable =>
       _location.latitude != 0 || _location.longitude != 0;
 
@@ -74,18 +76,54 @@ class AppStateProvider extends ChangeNotifier {
   bool get isFlashOn => _isFlashOn;
   bool get isGridVisible => _isGridVisible;
   double get currentZoom => _currentZoom;
-  String get currentMode => _currentMode;
   bool get isCapturing => _isCapturing;
 
   Future<void> updateSettings(SettingsData newSettings) async {
     final languageChanged = _settings.language != newSettings.language;
     _settings = newSettings;
-    notifyListeners();
-    await SettingsService.saveSettings(newSettings);
 
-    if (languageChanged) {
-      await refreshLocationData();
+    if (!languageChanged) {
+      notifyListeners();
+      await SettingsService.saveSettings(newSettings);
+      return;
     }
+
+    final languageChangeId = ++_languageChangeId;
+    final requestId = ++_locationRequestId;
+    _isLanguageChanging = true;
+    _isLocationLoading = true;
+    notifyListeners();
+
+    final locale = newSettings.language == AppLanguage.hi ? 'hi_IN' : 'en_US';
+    final locationFuture = locationAvailable
+        ? LocationService.localizeLocation(
+            _location,
+            localeIdentifier: locale,
+          )
+        : LocationService.getCurrentLocation(localeIdentifier: locale);
+
+    // Persistence and reverse geocoding are independent. Running them in
+    // parallel keeps the UI wait close to the platform-geocoder time only.
+    LocationData? localizedLocation;
+    try {
+      await Future.wait<void>([
+        SettingsService.saveSettings(newSettings),
+        locationFuture.then((value) => localizedLocation = value),
+      ]);
+    } catch (error) {
+      debugPrint('Language update failed: $error');
+    }
+
+    if (languageChangeId != _languageChangeId ||
+        requestId != _locationRequestId ||
+        _settings.language != newSettings.language) {
+      return;
+    }
+
+    if (localizedLocation != null) _location = localizedLocation!;
+    _isLocationLoading = false;
+    _isLanguageChanging = false;
+    notifyListeners();
   }
 
   Future<void> addSavedLocation(SavedLocation loc) async {
@@ -115,7 +153,7 @@ class AppStateProvider extends ChangeNotifier {
 
     // Start periodic refresh (every 30 seconds)
     _locationRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (!_isCapturing) refreshLocationData();
+      if (!_isCapturing && !_isLanguageChanging) refreshLocationData();
     });
 
     _sensorService.startListening((data) {
@@ -189,11 +227,6 @@ class AppStateProvider extends ChangeNotifier {
   void setZoom(double newZoom) {
     if (newZoom < 1.0) newZoom = 1.0;
     _currentZoom = newZoom;
-    notifyListeners();
-  }
-
-  void setMode(String m) {
-    _currentMode = m;
     notifyListeners();
   }
 

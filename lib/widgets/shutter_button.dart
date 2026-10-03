@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../utils/constants.dart';
 
 class ShutterButton extends StatefulWidget {
   final VoidCallback onPressed;
@@ -71,23 +72,48 @@ class _ShutterButtonState extends State<ShutterButton>
                         width: 58,
                         height: 58,
                         child: CircularProgressIndicator(
-                          color: Color(
-                              0xFFB5B3E6), // Light purplish color from frames
+                          color: AppColors.accentGreen,
                           strokeWidth: 4,
                         ),
                       )
                     : Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
+                          gradient: const LinearGradient(
+                            colors: [Colors.white, Color(0xFFDCE7F3)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  AppColors.accentGreen.withValues(alpha: 0.28),
+                              blurRadius: 20,
+                              spreadRadius: 2,
+                            ),
+                          ],
                         ),
                         child: Center(
                           child: Container(
-                            width: 58,
-                            height: 58,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceDark,
                               shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.background,
+                                width: 2,
+                              ),
+                            ),
+                            child: Center(
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: const BoxDecoration(
+                                  gradient: AppColors.primaryGradient,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
                             ),
                           ),
                         ),

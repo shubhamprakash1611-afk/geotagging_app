@@ -8,6 +8,23 @@ enum MapType { street, earth }
 
 enum AppLanguage { en, hi }
 
+enum CaptureAspectRatio { ratio4x3, ratio9x16, square, full }
+
+extension CaptureAspectRatioLabel on CaptureAspectRatio {
+  String get label {
+    switch (this) {
+      case CaptureAspectRatio.ratio4x3:
+        return '3:4';
+      case CaptureAspectRatio.ratio9x16:
+        return '9:16';
+      case CaptureAspectRatio.square:
+        return '1:1';
+      case CaptureAspectRatio.full:
+        return 'Full';
+    }
+  }
+}
+
 class SettingsData {
   final GeoTagPlacement geoTagPlacement;
   final bool geoTagEnabled;
@@ -23,6 +40,7 @@ class SettingsData {
   final bool showWatermark;
   final bool hapticFeedbackEnabled;
   final AppLanguage language;
+  final CaptureAspectRatio captureAspectRatio;
 
   const SettingsData({
     required this.geoTagPlacement,
@@ -39,6 +57,7 @@ class SettingsData {
     required this.showWatermark,
     required this.hapticFeedbackEnabled,
     required this.language,
+    required this.captureAspectRatio,
   });
 
   static const SettingsData defaultSettings = SettingsData(
@@ -57,6 +76,7 @@ class SettingsData {
     showWatermark: true,
     hapticFeedbackEnabled: true,
     language: AppLanguage.en,
+    captureAspectRatio: CaptureAspectRatio.ratio4x3,
   );
 
   ResolutionPreset toResolutionPreset() {
@@ -85,6 +105,7 @@ class SettingsData {
     bool? showWatermark,
     bool? hapticFeedbackEnabled,
     AppLanguage? language,
+    CaptureAspectRatio? captureAspectRatio,
   }) {
     return SettingsData(
       geoTagPlacement: geoTagPlacement ?? this.geoTagPlacement,
@@ -102,6 +123,7 @@ class SettingsData {
       hapticFeedbackEnabled:
           hapticFeedbackEnabled ?? this.hapticFeedbackEnabled,
       language: language ?? this.language,
+      captureAspectRatio: captureAspectRatio ?? this.captureAspectRatio,
     );
   }
 
@@ -121,6 +143,7 @@ class SettingsData {
       'showWatermark': showWatermark,
       'hapticFeedbackEnabled': hapticFeedbackEnabled,
       'language': language.name,
+      'captureAspectRatio': captureAspectRatio.name,
     };
   }
 
@@ -135,7 +158,7 @@ class SettingsData {
       mapZoomLevel: (json['mapZoomLevel'] ?? 14.0).toDouble(),
       mapType: MapType.values.byName(json['mapType'] ?? MapType.street.name),
       saveDirectory: json['saveDirectory'] ?? 'GeoTagCamera',
-      activeTemplateId: json['activeTemplateId'] ?? 'advance',
+      activeTemplateId: _normalizeTemplateId(json['activeTemplateId']),
       showWeatherData: json['showWeatherData'] ?? true,
       showSensorData: json['showSensorData'] ?? true,
       showPlusCode: json['showPlusCode'] ?? true,
@@ -143,6 +166,24 @@ class SettingsData {
       hapticFeedbackEnabled: json['hapticFeedbackEnabled'] ?? true,
       language:
           AppLanguage.values.byName(json['language'] ?? AppLanguage.en.name),
+      captureAspectRatio: CaptureAspectRatio.values.byName(
+        json['captureAspectRatio'] ?? CaptureAspectRatio.ratio4x3.name,
+      ),
     );
+  }
+
+  static String _normalizeTemplateId(dynamic value) {
+    const legacyIds = {
+      'advance_template': 'advance',
+      'advance2_template': 'advance2',
+      'advance_2': 'advance2',
+      'datetime_template': 'datetime',
+      'scan_location_template': 'scan_location',
+      'classic_template': 'classic',
+      'reporting_template': 'reporting',
+      'navigation_template': 'navigation',
+    };
+    final id = value is String ? value : 'advance';
+    return legacyIds[id] ?? id;
   }
 }

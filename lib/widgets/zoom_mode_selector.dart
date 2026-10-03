@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state_provider.dart';
 import '../utils/constants.dart';
-import '../utils/app_translations.dart';
 
 class ZoomModeSelector extends StatelessWidget {
   final Function(double) onZoomChanged;
@@ -12,90 +11,60 @@ class ZoomModeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AppStateProvider>(
       builder: (context, state, _) {
-        final t = AppTranslations(state.settings.language);
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // --- Zoom Row ---
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [1.0, 2.0, 3.0].map((zoom) {
-                final isActive = state.currentZoom == zoom;
-                return GestureDetector(
+        return Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.28),
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [1.0, 2.0, 3.0].map((zoom) {
+              final isActive = state.currentZoom == zoom;
+              return Semantics(
+                button: true,
+                selected: isActive,
+                label: '${zoom.toStringAsFixed(0)} times zoom',
+                child: GestureDetector(
                   onTap: () {
                     state.setZoom(zoom);
                     onZoomChanged(zoom);
                   },
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 6),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    width: 58,
+                    padding: const EdgeInsets.symmetric(vertical: 7),
                     decoration: BoxDecoration(
-                      color: isActive ? AppColors.accentGreen : Colors.black45,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color:
-                            isActive ? AppColors.accentGreen : Colors.white24,
-                        width: 1,
-                      ),
+                      gradient: isActive ? AppColors.primaryGradient : null,
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: isActive
+                          ? [
+                              BoxShadow(
+                                color: AppColors.accentGreen
+                                    .withValues(alpha: 0.22),
+                                blurRadius: 12,
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Text(
-                      '${zoom}x',
+                      '${zoom.toStringAsFixed(0)}×',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: isActive ? Colors.black : Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 12),
-
-            // --- Mode Row ---
-            Row(
-              children: ['QUICK SHARE', 'PHOTO', 'VIDEO'].map((mode) {
-                final isActive = state.currentMode == mode;
-                final label = mode == 'PHOTO'
-                    ? t.text('photo')
-                    : mode == 'VIDEO'
-                        ? t.text('video')
-                        : t.text('quickShare');
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => state.setMode(mode),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 5, vertical: 8),
-                      decoration: BoxDecoration(
                         color: isActive
-                            ? AppColors.accentGreen
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        label,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: isActive ? Colors.black : Colors.white70,
-                          fontWeight:
-                              isActive ? FontWeight.bold : FontWeight.w500,
-                          fontSize: 11,
-                          letterSpacing: 0.3,
-                        ),
+                            ? const Color(0xFF042117)
+                            : AppColors.textSecondary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
                       ),
                     ),
                   ),
-                );
-              }).toList(),
-            ),
-          ],
+                ),
+              );
+            }).toList(),
+          ),
         );
       },
     );

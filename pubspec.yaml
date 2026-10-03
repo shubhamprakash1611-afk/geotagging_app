@@ -12,7 +12,9 @@ dependencies:
     sdk: flutter
 
   # --- Camera ---
-  camera: ^0.10.5+9
+  # CameraX provides higher-quality still capture and more consistent flash
+  # behavior across Android vendors than the legacy Camera2 implementation.
+  camera: ^0.12.1
 
   # --- Location & Maps (100% Free) ---
   geolocator: ^11.0.0

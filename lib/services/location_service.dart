@@ -40,18 +40,10 @@ class LocationService {
         throw Exception('Could not determine location');
       }
 
-      // geocoding 2.2.x exposes localeIdentifier on
-      // placemarkFromCoordinates, but does not forward it to the platform
-      // implementation. Set the platform locale explicitly before the lookup.
-      // Without this call Android always returns the device-default language.
-      if (localeIdentifier != null && localeIdentifier.isNotEmpty) {
-        await GeocodingPlatform.instance!.setLocaleIdentifier(localeIdentifier);
-      }
-
-      // Reverse geocode using the requested template language.
-      final placemarks = await placemarkFromCoordinates(
+      final placemarks = await _reverseGeocode(
         position.latitude,
         position.longitude,
+        localeIdentifier: localeIdentifier,
       );
 
       final place = placemarks.isNotEmpty ? placemarks.first : null;
@@ -80,6 +72,55 @@ class LocationService {
       final loc = LocationData.empty();
       return loc.copyWith(locationName: 'Error: ${e.toString()}');
     }
+  }
+
+  /// Re-runs only reverse geocoding for an existing GPS fix.
+  ///
+  /// Language changes must not wait for another high-accuracy GPS request. The
+  /// coordinates and capture timestamp stay intact while only address fields
+  /// are replaced with values from the requested device-geocoder locale.
+  static Future<LocationData> localizeLocation(
+    LocationData location, {
+    required String localeIdentifier,
+  }) async {
+    try {
+      final placemarks = await _reverseGeocode(
+        location.latitude,
+        location.longitude,
+        localeIdentifier: localeIdentifier,
+      );
+      if (placemarks.isEmpty) return location;
+
+      final place = placemarks.first;
+      return location.copyWith(
+        locationName: _buildLocationName(place),
+        fullAddress: _buildFullAddress(place),
+        zipCode: place.postalCode ?? '--',
+        city: place.locality ?? place.subLocality ?? '',
+        state: place.administrativeArea ?? '',
+        country: place.country ?? '',
+        countryCode: place.isoCountryCode ?? '',
+      );
+    } catch (_) {
+      // Keep the last valid address when the platform geocoder is temporarily
+      // unavailable. A later periodic location refresh will try again.
+      return location;
+    }
+  }
+
+  static Future<List<Placemark>> _reverseGeocode(
+    double latitude,
+    double longitude, {
+    String? localeIdentifier,
+  }) async {
+    // geocoding 2.2.x exposes localeIdentifier on
+    // placemarkFromCoordinates, but does not forward it to the platform
+    // implementation. Set the platform locale explicitly before the lookup.
+    if (localeIdentifier != null && localeIdentifier.isNotEmpty) {
+      await GeocodingPlatform.instance!.setLocaleIdentifier(localeIdentifier);
+    }
+
+    return placemarkFromCoordinates(latitude, longitude);
   }
 
   static String _buildLocationName(Placemark? p) {
